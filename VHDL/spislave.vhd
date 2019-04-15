@@ -48,18 +48,18 @@ begin
 	RSYNC: process(MCLK, nRST)
 	begin
 		if (nRST = '0') then
-			ss_asy <= '1';
+			--ss_asy <= '1';
 			ss_i <= '1';
-			sck_asy <= '0'; -- CPOL = 0;
+			--sck_asy <= '0'; -- CPOL = 0;
 			sck_i <= '0';
 			sck_q <= '0';
-			mosi_asy <= '0';
+			--mosi_asy <= '0';
 			mosi_i <= '0';
 			ID <= '1';
 		elsif (MCLK'event and MCLK = '1') then
-			ss_asy <= SS;
-			sck_asy <= SCK;
-			mosi_asy <= MOSI;
+			--ss_asy <= SS;
+			--sck_asy <= SCK;
+			--mosi_asy <= MOSI;
 			ss_i <= ss_asy;
 			sck_i <= sck_asy;
 			mosi_i <= mosi_asy;
@@ -68,6 +68,20 @@ begin
 			ID <= start;
 		end if;
 	end process RSYNC;
+	
+	-- falling edge
+	RSYNCN: process(MCLK, nRST)
+	begin
+		if (nRST = '0') then
+			ss_asy <= '1';
+			mosi_asy <= '0';
+			sck_asy <= '0'; -- CPOL = 0;			
+		elsif (MCLK'event and MCLK = '0') then
+			ss_asy <= SS;
+			sck_asy <= SCK;
+			mosi_asy <= MOSI;
+		end if;
+	end process RSYNCN;
 	
 	sckup <= not(sck_q) and sck_i;
 	sckdown <= sck_q and not(sck_i);
@@ -79,7 +93,7 @@ begin
 	OTO: process(MCLK, nRST)
 	begin
 		if (nRST = '0') then
-			MISO <= '0';
+			MISO <= '1';
 			state <= S_IDLE;
 			POUT <= (others=>'0');
 			RDYIN <= '0';
@@ -93,7 +107,8 @@ begin
 				RDYOUT <= '0';
 				--if (ssdown = '0') then
 				if (ss_i = '0') then
-					sout <= PIN(6 downto 0) & '0';
+					--sout <= PIN(6 downto 0) & '0';
+					sout <= PIN(6 downto 0) & '1';
 					MISO <= PIN(7);
 					RDYOUT <= '0';
 					RDYIN <= '0';
@@ -105,7 +120,7 @@ begin
 					RDYOUT <= '0';
 					RDYIN <= '0';
 					cnt <= 0;
-					MISO <= '0';					
+					--MISO <= '0';					
 				end if;
 			elsif (state = S_WAIT_CAPTURE) then
 				RDYIN <= '0';
@@ -115,7 +130,7 @@ begin
 					RDYIN <= '0';
 					RDYOUT <= '0';
 					cnt <= 0;
-					MISO <= '0';
+					--MISO <= '0';
 				elsif (capture_edge = '1') then
 					if (cnt = 0) then
 						RDYIN <= '1';
@@ -131,6 +146,10 @@ begin
 					sout(7 downto 1) <= sout(6 downto 0);
 					if (cnt = 7) then
 						cnt <= 0;
+						--
+						POUT <= sin;
+						RDYOUT <= '1';
+						--
 						state <= S_END;
 					else
 						cnt <= cnt + 1;
@@ -138,8 +157,9 @@ begin
 					end if;
 				end if;
 			elsif (state = S_END) then
-				POUT <= sin;
-				RDYOUT <= '1';
+				--POUT <= sin;
+				--RDYOUT <= '1';
+				RDYOUT <= '0';
 				state <= S_IDLE;
 				start <= '0';
 			end if;
